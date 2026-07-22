@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S&P500, 매달 얼마 넣을까?</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#161A20;
+  --paper:#F7F5F0;
+  --card:#FFFFFF;
+  --rule:#E2DDD3;
+  --muted:#71757D;
+  --safe:#0F6E5C;
+  --safe-soft:#E4F1ED;
+  --gold:#B8862F;
+  --gold-soft:#FBF2DF;
+  --alert:#9C4221;
+  --alert-soft:#FBEDE6;
+  --focus:#1B4F8A;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'IBM Plex Sans KR',-apple-system,BlinkMacSystemFont,sans-serif;
+  background:var(--paper);color:var(--ink);line-height:1.65;
+  padding:28px 18px 72px;-webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:540px;margin:0 auto}
+
+header{margin-bottom:34px}
+.eyebrow{
+  display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:10.5px;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--gold);
+  background:var(--gold-soft);padding:5px 10px;border-radius:2px;margin-bottom:14px;
+}
+h1{font-size:28px;font-weight:700;letter-spacing:-.025em;line-height:1.3}
+
+.card{
+  background:var(--card);border:1px solid var(--rule);border-radius:6px;
+  padding:22px 20px;margin-bottom:14px;
+}
+label{display:block;font-size:15.5px;font-weight:600;margin-bottom:5px}
+.hint{font-size:13px;color:var(--muted);margin-bottom:13px;line-height:1.55}
+
+.input-row{position:relative;display:flex;align-items:center}
+input[type=number]{
+  width:100%;font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;
+  padding:13px 56px 13px 15px;border:1.5px solid var(--rule);border-radius:4px;
+  background:var(--paper);color:var(--ink);transition:border-color .15s,background .15s;
+}
+input[type=number]:focus{outline:none;border-color:var(--ink);background:#fff}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield}
+.unit{position:absolute;right:16px;font-size:14px;color:var(--muted);pointer-events:none;font-weight:500}
+
+.slider-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.slider-val{
+  font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:600;
+  background:var(--ink);color:var(--paper);padding:3px 12px;border-radius:3px;
+}
+input[type=range]{width:100%;-webkit-appearance:none;background:transparent;height:26px;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:4px;background:var(--rule);border-radius:2px}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:var(--ink);
+  margin-top:-10px;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.22);
+}
+input[type=range]::-moz-range-track{height:4px;background:var(--rule);border-radius:2px}
+input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:var(--ink);border:3px solid #fff}
+.ticks{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);margin-top:2px}
+
+button.calc{
+  width:100%;padding:17px;font-family:inherit;font-size:16.5px;font-weight:700;
+  background:var(--ink);color:var(--paper);border:none;border-radius:5px;cursor:pointer;
+  margin-top:8px;transition:transform .12s,box-shadow .15s;
+  box-shadow:0 2px 10px rgba(22,26,32,.18);
+}
+button.calc:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(22,26,32,.24)}
+button.calc:active{transform:none}
+button.calc:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+
+#result{margin-top:38px;display:none}
+#result.show{display:block;animation:rise .32s ease}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+.alert{
+  background:var(--alert-soft);border:1px solid #F0D5C6;border-left:4px solid var(--alert);
+  padding:20px;border-radius:5px;font-size:14px;line-height:1.72;
+}
+.alert h3{font-size:15.5px;margin-bottom:9px;color:var(--alert);font-weight:700}
+.alert ul{margin:12px 0 0 16px}
+.alert li{margin-bottom:6px}
+.alert strong{font-weight:600}
+
+.split{display:grid;gap:11px;margin-bottom:30px}
+.pane{
+  border-radius:6px;padding:19px 20px;display:flex;
+  justify-content:space-between;align-items:center;gap:14px;
+}
+.pane.safe{background:var(--safe-soft);border:1px solid #C5E0D8}
+.pane.limit{background:var(--ink);color:var(--paper)}
+.pane-k{font-size:14px;font-weight:700}
+.pane.safe .pane-k{color:var(--safe)}
+.pane-sub{font-size:12px;font-weight:400;margin-top:2px;color:var(--muted)}
+.pane.limit .pane-sub{color:rgba(247,245,240,.62)}
+.pane-v{font-family:'IBM Plex Mono',monospace;font-size:24px;font-weight:600;white-space:nowrap}
+.pane.safe .pane-v{color:var(--safe)}
+
+.sec-title{font-size:18px;font-weight:700;margin-bottom:5px;letter-spacing:-.01em}
+.sec-desc{font-size:13.5px;color:var(--muted);margin-bottom:16px;line-height:1.6}
+
+.opts{display:grid;gap:10px}
+.opt{
+  display:flex;justify-content:space-between;align-items:center;gap:14px;
+  padding:17px 20px;border:1.5px solid var(--rule);border-radius:6px;
+  background:var(--card);cursor:pointer;transition:all .16s;
+  text-align:left;font-family:inherit;width:100%;color:var(--ink);
+}
+.opt:hover{border-color:var(--muted);transform:translateX(2px)}
+.opt.on{border-color:var(--gold);background:var(--gold-soft);box-shadow:inset 0 0 0 1px var(--gold)}
+.opt:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.opt-name{font-size:16.5px;font-weight:700;display:block;letter-spacing:-.01em}
+.opt-desc{font-size:12.5px;color:var(--muted);margin-top:2px;display:block;line-height:1.5}
+.opt.on .opt-desc{color:#8A6A2A}
+.opt-num{font-family:'IBM Plex Mono',monospace;font-size:21px;font-weight:600;white-space:nowrap}
+.opt.on .opt-num{color:var(--gold)}
+
+footer{
+  margin-top:36px;padding-top:18px;border-top:1px solid var(--rule);
+  font-size:12px;color:var(--muted);line-height:1.7;
+}
+@media(max-width:400px){
+  h1{font-size:24px}
+  .pane-v{font-size:21px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">은공 · 자산 배분 계산기</div>
+  <h1>S&P500,<br>매달 얼마 넣을까?</h1>
+</header>
+
+<div class="card">
+  <label for="cur">지금까지 모은 돈</label>
+  <p class="hint">현금과 예적금만 넣어주세요.</p>
+  <div class="input-row">
+    <input type="number" id="cur" value="2000" min="0" step="100" inputmode="numeric">
+    <span class="unit">만 원</span>
+  </div>
+</div>
+
+<div class="card">
+  <label for="save">매달 모을 수 있는 돈</label>
+  <p class="hint">월급이 아니라, 지출하고 남길 수 있는 금액을 넣어주세요.</p>
+  <div class="input-row">
+    <input type="number" id="save" value="150" min="1" step="10" inputmode="numeric">
+    <span class="unit">만 원</span>
+  </div>
+</div>
+
+<div class="card">
+  <label for="goal">목표 금액</label>
+  <p class="hint">아직 계획이 없다면, 5,000만 원으로 시작해보세요.</p>
+  <div class="input-row">
+    <input type="number" id="goal" value="5000" min="0" step="500" inputmode="numeric">
+    <span class="unit">만 원</span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="slider-head">
+    <label for="yrs" style="margin:0">언제까지 모을까요</label>
+    <span class="slider-val" id="yrsOut">3년</span>
+  </div>
+  <input type="range" id="yrs" min="1" max="5" value="3" step="1">
+  <div class="ticks"><span>1년</span><span>2년</span><span>3년</span><span>4년</span><span>5년</span></div>
+</div>
+
+<button class="calc" id="run">내 한도 계산하기</button>
+
+<div id="result"></div>
+
+<footer>
+  이 계산기는 투자 권유가 아니며, 최종 판단과 책임은 본인에게 있습니다.<br>
+  입력값은 개인을 식별할 수 없는 형태로 집계되어 콘텐츠 개선에만 사용됩니다.
+</footer>
+
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const won = n => Math.round(n).toLocaleString('ko-KR');
+
+const LOG_URL = 'https://script.google.com/macros/s/AKfycbwJEG7j_T3yy9VGVhYeKmpgs-V24_eJTnDzgmpqRnGoWa5IPGxh4psiPOVbvuHyLVE0PA/exec';
+
+function log(payload){
+  try{
+    fetch(LOG_URL, {
+      method:'POST',
+      mode:'no-cors',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify(payload)
+    });
+  }catch(err){}
+}
+const RATIOS = [
+  {name:'천천히', desc:'마음 편한 게 우선이라면', pct:0.40},
+  {name:'적당히', desc:'조금 흔들려도 괜찮다면', pct:0.50},
+  {name:'과감히', desc:'크게 흔들려도 버틸 수 있다면', pct:0.70}
+];
+const OPTION_THRESHOLD = 20;
+
+$('yrs').addEventListener('input', e => $('yrsOut').textContent = e.target.value + '년');
+
+$('run').addEventListener('click', () => {
+  const cur = Math.max(0, +$('cur').value || 0);
+  const save = Math.max(0, +$('save').value || 0);
+  const goal = Math.max(0, +$('goal').value || 0);
+  const yrs = +$('yrs').value;
+  const months = yrs * 12;
+  const box = $('result');
+
+  if (save <= 0) {
+    box.innerHTML = `<div class="alert"><h3>매달 모을 수 있는 금액을 입력해주세요</h3>
+      이 금액이 있어야 배분을 계산할 수 있습니다.</div>`;
+    box.classList.add('show');
+    return;
+  }
+
+  const gap = Math.max(0, goal - cur);
+  const needMonthly = gap / months;
+
+  if (needMonthly > save) {
+    const reachable = cur + save * months;
+    const needYears = gap / save / 12;
+    box.innerHTML = `
+      <div class="alert">
+        <h3>지금 조건으로는 ${yrs}년 안에 목표에 닿지 않습니다</h3>
+        목표까지 ${won(gap)}만 원이 남아 매달 ${won(needMonthly)}만 원이 필요한데,
+        모을 수 있는 금액은 ${won(save)}만 원입니다.
+        <ul>
+          <li>목표를 <strong>${won(reachable)}만 원</strong>으로 낮추면 ${yrs}년 안에 달성합니다.</li>
+          <li>기간을 <strong>${needYears.toFixed(1)}년</strong>으로 늘려도 됩니다.</li>
+        </ul>
+      </div>`;
+    box.classList.add('show');
+    log({cur, save, goal, yrs, limit:'', choice:'목표미달'});
+    return;
+  }
+
+  const limit = save - needMonthly;
+
+  if (limit <= OPTION_THRESHOLD) {
+    box.innerHTML = `
+      <div class="split">
+        <div class="pane safe">
+          <div><div class="pane-k">안전자산에 매달</div>
+          <div class="pane-sub">${yrs}년 뒤 ${won(goal)}만 원을 만드는 금액</div></div>
+          <div class="pane-v">${won(needMonthly)}만</div>
+        </div>
+        <div class="pane limit">
+          <div><div class="pane-k">S&P500 한도</div>
+          <div class="pane-sub">목표를 지키고 남는 금액</div></div>
+          <div class="pane-v">${won(limit)}만</div>
+        </div>
+      </div>
+      <div class="alert">
+        <h3>지금은 종잣돈을 만드는 단계입니다</h3>
+        목표를 맞추면 투자에 쓸 수 있는 돈이 많지 않습니다.
+        수익률보다 ${yrs}년 뒤 쓸 돈을 만드는 게 먼저예요.
+        투자를 완전히 미루기보다 <strong>월 ${won(limit)}만 원</strong> 안에서
+        시장을 경험해보시길 권합니다.
+      </div>`;
+    box.classList.add('show');
+    log({cur, save, goal, yrs, limit:Math.round(limit), choice:'종잣돈단계'});
+    return;
+  }
+
+  const opts = RATIOS.map(r => ({...r, amt: limit * r.pct}));
+
+  box.innerHTML = `
+    <div class="split">
+      <div class="pane safe">
+        <div><div class="pane-k">안전자산에 매달</div>
+        <div class="pane-sub">${yrs}년 뒤 ${won(goal)}만 원을 만드는 금액</div></div>
+        <div class="pane-v">${won(needMonthly)}만</div>
+      </div>
+      <div class="pane limit">
+        <div><div class="pane-k">S&P500 최대 한도</div>
+        <div class="pane-sub">목표를 지키고 남는 금액</div></div>
+        <div class="pane-v">${won(limit)}만</div>
+      </div>
+    </div>
+
+    <div class="sec-title">이 한도 안에서 얼마나 넣을까요</div>
+    <p class="sec-desc">한도를 꽉 채워야 하는 건 아닙니다. 시장이 떨어져도 팔지 않을 수 있는 금액이 내 금액이에요.</p>
+
+    <div class="opts">
+      ${opts.map(o => `
+        <button class="opt" data-amt="${o.amt}" data-name="${o.name}">
+          <span><span class="opt-name">${o.name}</span><span class="opt-desc">${o.desc}</span></span>
+          <span class="opt-num">${won(o.amt)}만</span>
+        </button>`).join('')}
+    </div>`;
+
+  box.classList.add('show');
+  log({cur, save, goal, yrs, limit:Math.round(limit), choice:'계산완료'});
+
+  box.querySelectorAll('.opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      box.querySelectorAll('.opt').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      log({cur, save, goal, yrs, limit:Math.round(limit), choice:btn.dataset.name});
+    });
+  });
+
+  box.scrollIntoView({behavior:'smooth', block:'start'});
+});
+</script>
+</body>
+</html>
