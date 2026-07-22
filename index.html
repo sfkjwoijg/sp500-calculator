@@ -204,7 +204,7 @@ function log(payload){
     var q = Object.keys(payload)
       .map(function(k){ return k + '=' + encodeURIComponent(payload[k]); })
       .join('&');
-    new Image().src = LOG_URL + '?' + q;
+    fetch(LOG_URL + '?' + q, {method:'GET', mode:'no-cors'});
   }catch(err){}
 }
 const RATIOS = [
